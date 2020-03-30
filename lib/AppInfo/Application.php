@@ -30,9 +30,11 @@ declare(strict_types=1);
 
 namespace OCA\FullTextSearch_ElasticSearch\AppInfo;
 
-
 use OCP\AppFramework\App;
-
+use OCA\FullTextSearch_ElasticSearch\Service\SearchMappingService;
+use OCA\FullTextSearch_ElasticSearch\Service\ConfigService;
+use OCA\FullTextSearch_ElasticSearch\Service\MiscService;
+use OCA\FullTextSearch_ElasticSearch\Service\UserStoragesService;
 
 /**
  * Class Application
@@ -52,7 +54,30 @@ class Application extends App {
 	 */
 	public function __construct(array $params = []) {
 		parent::__construct(self::APP_NAME, $params);
+		$this->registerServices();
 	}
 
+	private function registerServices(){
+		$container = $this->getContainer();
+		
+		// Make SearchMappingService also work without external storage
+		// if app is inactive or not installed.
+		$container->registerService(SearchMappingService::class, function($c) {
+			try{
+				$userStoragesService = $c->query(\OCA\Files_External\Service\UserGlobalStoragesService::class);
+				return new SearchMappingService(
+					$c->query(ConfigService::class),
+					$c->query(MiscService::class),
+					new UserStoragesService($userStoragesService)
+				);
+			}
+			catch (\OCP\AppFramework\QueryException $e) {
+				return new SearchMappingService(
+					$c->query(ConfigService::class),
+					$c->query(MiscService::class)
+				);
+			}
+		});
+	}
 }
 
