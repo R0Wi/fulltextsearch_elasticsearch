@@ -35,6 +35,8 @@ use OCA\FullTextSearch_ElasticSearch\Service\SearchMappingService;
 use OCA\FullTextSearch_ElasticSearch\Service\ConfigService;
 use OCA\FullTextSearch_ElasticSearch\Service\MiscService;
 use OCA\FullTextSearch_ElasticSearch\Service\UserStoragesService;
+use OCP\AppFramework\QueryException;
+use OCA\Files_External\Service\UserGlobalStoragesService;
 
 /**
  * Class Application
@@ -64,14 +66,14 @@ class Application extends App {
 		// if app is inactive or not installed.
 		$container->registerService(SearchMappingService::class, function($c) {
 			try{
-				$userStoragesService = $c->query(\OCA\Files_External\Service\UserGlobalStoragesService::class);
+				$userStoragesService = $c->query(UserGlobalStoragesService::class);
 				return new SearchMappingService(
 					$c->query(ConfigService::class),
 					$c->query(MiscService::class),
 					new UserStoragesService($userStoragesService)
 				);
 			}
-			catch (\OCP\AppFramework\QueryException $e) {
+			catch (QueryException $e) {
 				return new SearchMappingService(
 					$c->query(ConfigService::class),
 					$c->query(MiscService::class)
