@@ -95,6 +95,7 @@ class SearchService {
 
 		try {
 			$result = $client->search($query['params']);
+			$this->miscService->log('debug - ES result: ' . json_encode($result), 0);
 		} catch (Exception $e) {
 			$this->miscService->log(
 				'debug - request: ' . json_encode($searchResult->getRequest()) . '   - query: '
