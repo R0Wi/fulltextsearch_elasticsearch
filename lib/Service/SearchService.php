@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 
 /**
- * FullTextSearch_ElasticSearch - Use Elasticsearch to index the content of your nextcloud
+ * FullTextSearch_Elasticsearch - Use Elasticsearch to index the content of your nextcloud
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -28,7 +28,7 @@ declare(strict_types=1);
  */
 
 
-namespace OCA\FullTextSearch_ElasticSearch\Service;
+namespace OCA\FullTextSearch_Elasticsearch\Service;
 
 
 use daita\MySmallPhpTools\Traits\TArrayTools;
@@ -36,8 +36,8 @@ use Elasticsearch\Client;
 use Exception;
 use OC\FullTextSearch\Model\DocumentAccess;
 use OC\FullTextSearch\Model\IndexDocument;
-use OCA\FullTextSearch_ElasticSearch\Exceptions\ConfigurationException;
-use OCA\FullTextSearch_ElasticSearch\Exceptions\SearchQueryGenerationException;
+use OCA\FullTextSearch_Elasticsearch\Exceptions\ConfigurationException;
+use OCA\FullTextSearch_Elasticsearch\Exceptions\SearchQueryGenerationException;
 use OCP\FullTextSearch\Model\IDocumentAccess;
 use OCP\FullTextSearch\Model\IIndexDocument;
 use OCP\FullTextSearch\Model\ISearchResult;
@@ -46,7 +46,7 @@ use OCP\FullTextSearch\Model\ISearchResult;
 /**
  * Class SearchService
  *
- * @package OCA\FullTextSearch_ElasticSearch\Service
+ * @package OCA\FullTextSearch_Elasticsearch\Service
  */
 class SearchService {
 
@@ -85,6 +85,7 @@ class SearchService {
 		Client $client, ISearchResult $searchResult, IDocumentAccess $access
 	) {
 		try {
+			$this->miscService->log('New Search Request; SearchResult Model: ' . json_encode($searchResult), 0);
 			$query = $this->searchMappingService->generateSearchQuery(
 				$searchResult->getRequest(), $access, $searchResult->getProvider()
 																   ->getId()
@@ -94,6 +95,8 @@ class SearchService {
 		}
 
 		try {
+			$this->miscService->log('Searching ES: ' . json_encode($query['params']), 0);
+
 			$result = $client->search($query['params']);
 		} catch (Exception $e) {
 			$this->miscService->log(
@@ -103,11 +106,14 @@ class SearchService {
 			throw $e;
 		}
 
+		$this->miscService->log('Result from ES: ' . json_encode($result), 0);
 		$this->updateSearchResult($searchResult, $result);
 
 		foreach ($result['hits']['hits'] as $entry) {
 			$searchResult->addDocument($this->parseSearchEntry($entry, $access->getViewerId()));
 		}
+
+		$this->miscService->log('Filled SearchResult Model: ' . json_encode($searchResult), 0);
 	}
 
 

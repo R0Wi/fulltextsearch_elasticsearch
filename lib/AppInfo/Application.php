@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 
 /**
- * FullTextSearch_ElasticSearch - Use Elasticsearch to index the content of your nextcloud
+ * FullTextSearch_Elasticsearch - Use Elasticsearch to index the content of your nextcloud
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -28,22 +28,28 @@ declare(strict_types=1);
  */
 
 
-namespace OCA\FullTextSearch_ElasticSearch\AppInfo;
+namespace OCA\FullTextSearch_Elasticsearch\AppInfo;
 
 use OCP\AppFramework\App;
 use OCA\FullTextSearch_ElasticSearch\Service\SearchMappingService;
 use OCA\FullTextSearch_ElasticSearch\Service\ConfigService;
 use OCA\FullTextSearch_ElasticSearch\Service\MiscService;
 use OCA\FullTextSearch_ElasticSearch\Service\UserStoragesService;
-use OCP\AppFramework\QueryException;
 use OCA\Files_External\Service\UserGlobalStoragesService;
+use OCP\AppFramework\Bootstrap\IBootContext;
+use OCP\AppFramework\Bootstrap\IBootstrap;
+use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use Psr\Container\ContainerExceptionInterface;
+
+require_once __DIR__ . '/../../vendor/autoload.php';
+
 
 /**
  * Class Application
  *
- * @package OCA\FullTextSearch_ElasticSearch\AppInfo
+ * @package OCA\FullTextSearch_Elasticsearch\AppInfo
  */
-class Application extends App {
+class Application extends App implements IBootstrap {
 
 
 	const APP_NAME = 'fulltextsearch_elasticsearch';
@@ -56,15 +62,15 @@ class Application extends App {
 	 */
 	public function __construct(array $params = []) {
 		parent::__construct(self::APP_NAME, $params);
-		$this->registerServices();
 	}
 
-	private function registerServices(){
-		$container = $this->getContainer();
-		
+	/**
+	 * @param IRegistrationContext $context
+	 */
+	public function register(IRegistrationContext $context): void {
 		// Make SearchMappingService also work without external storage
 		// if app is inactive or not installed.
-		$container->registerService(SearchMappingService::class, function($c) {
+		$context->registerService(SearchMappingService::class, function($c) {
 			try{
 				$userStoragesService = $c->query(UserGlobalStoragesService::class);
 				return new SearchMappingService(
@@ -73,13 +79,19 @@ class Application extends App {
 					new UserStoragesService($userStoragesService)
 				);
 			}
-			catch (QueryException $e) {
+			catch (ContainerExceptionInterface $e) {
 				return new SearchMappingService(
 					$c->query(ConfigService::class),
 					$c->query(MiscService::class)
 				);
 			}
 		});
+	}
+
+	/**
+	 * @param IBootContext $context
+	 */
+	public function boot(IBootContext $context): void {
 	}
 }
 

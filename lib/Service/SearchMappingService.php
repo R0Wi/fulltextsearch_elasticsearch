@@ -3,7 +3,7 @@ declare(strict_types=1);
 
 
 /**
- * FullTextSearch_ElasticSearch - Use Elasticsearch to index the content of your nextcloud
+ * FullTextSearch_Elasticsearch - Use Elasticsearch to index the content of your nextcloud
  *
  * This file is licensed under the Affero General Public License version 3 or
  * later. See the COPYING file.
@@ -28,13 +28,13 @@ declare(strict_types=1);
  */
 
 
-namespace OCA\FullTextSearch_ElasticSearch\Service;
+namespace OCA\FullTextSearch_Elasticsearch\Service;
 
 
-use OCA\FullTextSearch_ElasticSearch\Exceptions\ConfigurationException;
-use OCA\FullTextSearch_ElasticSearch\Exceptions\QueryContentGenerationException;
-use OCA\FullTextSearch_ElasticSearch\Exceptions\SearchQueryGenerationException;
-use OCA\FullTextSearch_ElasticSearch\Model\QueryContent;
+use OCA\FullTextSearch_Elasticsearch\Exceptions\ConfigurationException;
+use OCA\FullTextSearch_Elasticsearch\Exceptions\QueryContentGenerationException;
+use OCA\FullTextSearch_Elasticsearch\Exceptions\SearchQueryGenerationException;
+use OCA\FullTextSearch_Elasticsearch\Model\QueryContent;
 use OCP\FullTextSearch\Model\IDocumentAccess;
 use OCP\FullTextSearch\Model\ISearchRequest;
 use OCP\FullTextSearch\Model\ISearchRequestSimpleQuery;
@@ -43,7 +43,7 @@ use stdClass;
 /**
  * Class SearchMappingService
  *
- * @package OCA\FullTextSearch_ElasticSearch\Service
+ * @package OCA\FullTextSearch_Elasticsearch\Service
  */
 class SearchMappingService {
 
@@ -109,7 +109,7 @@ class SearchMappingService {
 
 		$bool = [];
 		if ($request->getSearch() !== '') {
-			$bool['must']['bool']['should'] = $this->generateSearchQueryContent($request);
+			$bool['must']['bool'] = $this->generateSearchQueryContent($request);
 		}
 
 		$bool['filter'][]['bool']['must'] = ['term' => ['provider' => $providerId]];
@@ -248,26 +248,28 @@ class SearchMappingService {
 
 	/**
 	 * @param ISearchRequest $request
-	 * @param QueryContent[] $queryContents
+	 * @param QueryContent[] $contents
 	 *
 	 * @return array
 	 */
-	private function generateSearchQueryFromQueryContent(
-		ISearchRequest $request, array $queryContents
-	): array {
+	private function generateSearchQueryFromQueryContent(ISearchRequest $request, array $contents): array {
+		$query = [];
+		foreach ($contents as $content) {
+			if (!array_key_exists($content->getShould(), $query)) {
+				$query[$content->getShould()] = [];
+			}
 
-		$query = $queryWords = [];
-		foreach ($queryContents as $queryContent) {
-			$queryWords[$queryContent->getShould()][] =
-				$this->generateQueryContentFields($request, $queryContent);
+			if ($content->getShould() === 'must') {
+				$query[$content->getShould()][] =
+					['bool' => ['should' => $this->generateQueryContentFields($request, $content)]];
+			} else {
+				$query[$content->getShould()] = array_merge(
+					$query[$content->getShould()], $this->generateQueryContentFields($request, $content)
+				);
+			}
 		}
 
-		$listShould = array_keys($queryWords);
-		foreach ($listShould as $itemShould) {
-			$query[$itemShould][] = $queryWords[$itemShould];
-		}
-
-		return ['bool' => $query];
+		return $query;
 	}
 
 
@@ -277,8 +279,7 @@ class SearchMappingService {
 	 *
 	 * @return array
 	 */
-	private function generateQueryContentFields(ISearchRequest $request, QueryContent $content
-	): array {
+	private function generateQueryContentFields(ISearchRequest $request, QueryContent $content): array {
 		$queryFields = [];
 
 		$fields = array_merge(['content', 'title'], $request->getFields());
@@ -310,7 +311,7 @@ class SearchMappingService {
 			];
 		}
 
-		return ['bool' => ['should' => $queryFields]];
+		return $queryFields;
 	}
 
 
