@@ -63,7 +63,7 @@ class SearchMappingService {
 	 * @param MiscService $miscService
 	 * @param null|IUserStoragesService $userStoragesService
 	 */
-	public function __construct(ConfigService $configService, MiscService $miscService, IUserStoragesService $userStoragesService = null) {
+	public function __construct(ConfigService $configService, MiscService $miscService, IUserStoragesService $userStoragesService) {
 		$this->configService = $configService;
 		$this->miscService = $miscService;
 		$this->userStoragesService = $userStoragesService;
@@ -344,23 +344,13 @@ class SearchMappingService {
 	}
 
 	/**
-	 * @return array
-	 */
-	private function getExternalFileShares() : array {
-		if (!$this->userStoragesService) {
-			return [];
-		}
-		return $this->userStoragesService->getAllStoragesForUser();
-	}
-
-	/**
 	 * Generates condition array for external files
 	 * @return array
 	 */
 	private function getExternalFilesConditions(): array {
 		// TODO :: normally we should check if user want's to search 
 		// external files with "$request->getOption('files_external', '1') === '1'"
-		$externalFileShares = $this->getExternalFileShares();
+		$externalFileShares = $this->userStoragesService->getAllStoragesForUser();
 		if (empty($externalFileShares)) {
 			return [];
 		}

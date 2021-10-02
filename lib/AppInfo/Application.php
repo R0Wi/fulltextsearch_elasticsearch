@@ -35,10 +35,14 @@ use OCA\FullTextSearch_ElasticSearch\Service\SearchMappingService;
 use OCA\FullTextSearch_ElasticSearch\Service\ConfigService;
 use OCA\FullTextSearch_ElasticSearch\Service\MiscService;
 use OCA\FullTextSearch_ElasticSearch\Service\UserStoragesService;
+use OCA\FullTextSearch_ElasticSearch\Service\IUserStoragesService;
 use OCA\Files_External\Service\UserGlobalStoragesService;
+use OCA\Files_PhotoSpheres\Service\IStorageService;
+use OCA\FullTextSearch_ElasticSearch\Service\InactiveUserStoragesService;
 use OCP\AppFramework\Bootstrap\IBootContext;
 use OCP\AppFramework\Bootstrap\IBootstrap;
 use OCP\AppFramework\Bootstrap\IRegistrationContext;
+use OCP\IConfig;
 use Psr\Container\ContainerExceptionInterface;
 
 require_once __DIR__ . '/../../vendor/autoload.php';
@@ -70,21 +74,18 @@ class Application extends App implements IBootstrap {
 	public function register(IRegistrationContext $context): void {
 		// Make SearchMappingService also work without external storage
 		// if app is inactive or not installed.
-		$context->registerService(SearchMappingService::class, function($c) {
+		$context->registerService(IUserStoragesService::class, function($c) {
 			try{
-				$userStoragesService = $c->query(UserGlobalStoragesService::class);
-				return new SearchMappingService(
-					$c->query(ConfigService::class),
-					$c->query(MiscService::class),
-					new UserStoragesService($userStoragesService)
-				);
+				$userStoragesGlobalService = $c->query(UserGlobalStoragesService::class);
+				return new UserStoragesService($userStoragesGlobalService);
 			}
 			catch (ContainerExceptionInterface $e) {
-				return new SearchMappingService(
-					$c->query(ConfigService::class),
-					$c->query(MiscService::class)
-				);
+				new InactiveUserStoragesService();
 			}
+		});
+
+		$context->registerService(ConfigService::class, function($c) {
+			return new ConfigService($c->query(IConfig::class) , "someid", $c->query(MiscService::class));
 		});
 	}
 

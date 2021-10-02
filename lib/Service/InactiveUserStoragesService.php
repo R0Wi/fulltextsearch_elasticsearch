@@ -9,7 +9,7 @@ declare(strict_types=1);
  * later. See the COPYING file.
  *
  * @author Robin Windey <ro.windey@gmail.com>
- * @copyright 2020
+ * @copyright 2021
  * @license GNU AGPL version 3 or any later version
  *
  * This program is free software: you can redistribute it and/or modify
@@ -29,37 +29,16 @@ declare(strict_types=1);
 
 namespace OCA\FullTextSearch_ElasticSearch\Service;
 
-use OCA\Files_External\Service\UserGlobalStoragesService;
-
 /**
- * Wrapper class for native OCA\Files_External\Service\UserGlobalStoragesService
- */
-class UserStoragesService implements IUserStoragesService {
-    
-    /** @var UserGlobalStoragesService */
-    private $userGlobalStoragesService;
-
-    public function __construct(UserGlobalStoragesService $userGlobalStoragesService) {
-        $this->userGlobalStoragesService = $userGlobalStoragesService;
-    }
+* StoragesService implementation for a system not using external storages
+*/
+class InactiveUserStoragesService implements IUserStoragesService {
 
    /**
      * Returns an array of strings with all external mountpoints of the current user
      * @return array
      */
     public function getAllStoragesForUser() {
-        $userStorages = $this->userGlobalStoragesService->getAllStoragesForUser();
-		$mountPoints = [];
-		foreach($userStorages as $userStorage){
-			$mountPoint = $userStorage->getMountPoint();
-			if (substr($mountPoint, 0, 1) === '/'){
-				$mountPoint = substr($mountPoint, 1, strlen($mountPoint) - 1);
-			}
-			if (substr($mountPoint, strlen($mountPoint) - 1, 1) !== '/'){
-				$mountPoint .= '/';
-			}
-			$mountPoints[] = $mountPoint;
-		}
-		return $mountPoints;
+        return [];
     }
 }
