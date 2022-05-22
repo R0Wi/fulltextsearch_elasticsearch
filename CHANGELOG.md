@@ -9,6 +9,20 @@
 
 - compat nc23
 - display message on deleted index
+### 24.0.0
+
+- compat nc24
+
+
+### 23.0.0
+
+- compat nc23
+- display message on deleted index
+
+
+### 22.0.0
+
+- compat nc22
 
 
 ### 21.0.0

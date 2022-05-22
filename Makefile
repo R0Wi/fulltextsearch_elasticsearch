@@ -8,9 +8,9 @@ package_name=$(shell echo $(app_name) | tr '[:upper:]' '[:lower:]')
 cert_dir=$(HOME)/.nextcloud/certificates
 github_account=nextcloud
 release_account=nextcloud-releases
-branch=stable22
-version=22.0.1
-since_tag=22.0.0
+branch=stable24
+version=24.0.0
+since_tag=23.0.0
 
 all: appstore
 
@@ -62,7 +62,7 @@ github-upload:
 		--repo $(package_name) \
 		--tag $(version) \
 		--name "$(package_name)-$(version).tar.gz" \
-		--file $(build_dir)/$(package_name)-$(version).tar.gz
+		--file $(build_dir)/$(package_name).tar.gz
 
 
 clean:
@@ -97,9 +97,9 @@ appstore: clean composer
 	--exclude=/.travis.yml \
 	--exclude=/Makefile \
 	./ $(sign_dir)/$(package_name)
-	tar -czf $(build_dir)/$(package_name)-$(version).tar.gz \
+	tar -czf $(build_dir)/$(package_name).tar.gz \
 		-C $(sign_dir) $(package_name)
 	@if [ -f $(cert_dir)/$(package_name).key ]; then \
 		echo "Signing package…"; \
-		openssl dgst -sha512 -sign $(cert_dir)/$(package_name).key $(build_dir)/$(package_name)-$(version).tar.gz | openssl base64; \
+		openssl dgst -sha512 -sign $(cert_dir)/$(package_name).key $(build_dir)/$(package_name).tar.gz | openssl base64; \
 	fi
