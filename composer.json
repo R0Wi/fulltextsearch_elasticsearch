@@ -6,7 +6,13 @@
   "config": {
     "optimize-autoloader": true,
     "classmap-authoritative": true,
-    "autoloader-suffix": "FullTextSearch_Elasticsearch"
+    "autoloader-suffix": "FullTextSearch_Elasticsearch",
+    "allow-plugins": {
+      "php-http/discovery": false
+    },
+    "platform": {
+      "php": "8.0"
+    }
   },
   "authors": [
     {
@@ -20,6 +26,9 @@
     }
   },
   "require": {
-    "elasticsearch/elasticsearch": "7.12.0"
+    "elasticsearch/elasticsearch": "8.6.1"
+  },
+  "replace": {
+    "psr/log": "*"
   }
 }
