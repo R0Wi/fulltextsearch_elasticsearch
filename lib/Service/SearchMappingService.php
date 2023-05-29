@@ -50,9 +50,6 @@ class SearchMappingService {
 	/** @var ConfigService */
 	private $configService;
 
-	/** @var MiscService */
-	private $miscService;
-
 	/** @var IUserStoragesService */
 	private $userStoragesService;
 
@@ -60,12 +57,10 @@ class SearchMappingService {
 	 * SearchMappingService constructor.
 	 *
 	 * @param ConfigService $configService
-	 * @param MiscService $miscService
 	 * @param null|IUserStoragesService $userStoragesService
 	 */
-	public function __construct(ConfigService $configService, MiscService $miscService, IUserStoragesService $userStoragesService = null) {
+	public function __construct(ConfigService $configService, IUserStoragesService $userStoragesService = null) {
 		$this->configService = $configService;
-		$this->miscService = $miscService;
 		$this->userStoragesService = $userStoragesService;
 	}
 

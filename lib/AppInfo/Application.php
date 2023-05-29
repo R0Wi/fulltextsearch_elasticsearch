@@ -32,7 +32,6 @@ namespace OCA\FullTextSearch_Elasticsearch\AppInfo;
 use OCP\AppFramework\App;
 use OCA\FullTextSearch_ElasticSearch\Service\SearchMappingService;
 use OCA\FullTextSearch_ElasticSearch\Service\ConfigService;
-use OCA\FullTextSearch_ElasticSearch\Service\MiscService;
 use OCA\FullTextSearch_ElasticSearch\Service\UserStoragesService;
 use OCA\Files_External\Service\UserGlobalStoragesService;
 use OCP\AppFramework\Bootstrap\IBootContext;
@@ -66,14 +65,12 @@ class Application extends App implements IBootstrap {
 				$userStoragesService = $c->query(UserGlobalStoragesService::class);
 				return new SearchMappingService(
 					$c->query(ConfigService::class),
-					$c->query(MiscService::class),
 					new UserStoragesService($userStoragesService)
 				);
 			}
 			catch (ContainerExceptionInterface $e) {
 				return new SearchMappingService(
-					$c->query(ConfigService::class),
-					$c->query(MiscService::class)
+					$c->query(ConfigService::class)
 				);
 			}
 		});
