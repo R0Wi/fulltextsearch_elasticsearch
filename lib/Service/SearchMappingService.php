@@ -285,7 +285,14 @@ class SearchMappingService {
 
 		foreach ($request->getWildcardFields() as $field) {
 			if (!$this->fieldIsOutLimit($request, $field)) {
-				$queryFields[] = ['wildcard' => [$field => '*' . $content->getWord() . '*']];
+				$queryFields[] = ['wildcard' => [
+					$field => 
+						[
+							'value' => '*' . $content->getWord() . '*',
+							'case_insensitive' => true,
+							'boost' => 10
+						]
+					]];
 			}
 		}
 
