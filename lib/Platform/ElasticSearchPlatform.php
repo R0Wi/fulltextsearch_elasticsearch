@@ -378,7 +378,9 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 			return $host;
 		}
 
-		return trim(rtrim($host, '/'));
+		$trimmed = trim(rtrim($host, '/'));
+		// remove username and password from url if present
+		return preg_replace('/^(https?:\/\/)([^:]+:[^@]+@)/', '$1', $trimmed);
 	}
 
 	/**
@@ -389,11 +391,14 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 	private function connectToElastic(array $hosts) {
 
 		try {
-			$hosts = array_map([$this, 'cleanHost'], $hosts);
+			$urlResult = $this->processHostUrls($hosts);
+			$hosts = $urlResult['hosts'];
 			$cb = ClientBuilder::create()
 							   ->setHosts($hosts)
 							   ->setRetries(3);
-
+			if ($urlResult['user'] && $urlResult['pass']) {
+				$cb->setBasicAuthentication($urlResult['user'], $urlResult['pass']);
+			}
 			$this->client = $cb->build();
 
 //		}
@@ -409,6 +414,29 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 		}
 	}
 
+	/**
+	 * @param array $hosts
+	 */
+	private function processHostUrls(array $hosts) {
+		$user = null;
+		$pass = null;
+		$cleanedHosts = [];
+
+		foreach ($hosts as $host) {
+			$parts = parse_url($host);
+			if (!$user && isset($parts['user']) && isset($parts['pass'])) {
+				$user = $parts['user'];
+				$pass = $parts['pass'];
+			}
+			$cleanedHosts[] = $this->cleanHost($host);
+		}
+
+		return [
+			'hosts' => $cleanedHosts,
+			'user' => $user,
+			'pass' => $pass
+		];
+	}
 
 	/**
 	 * @param string $action
