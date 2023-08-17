@@ -31,8 +31,8 @@ declare(strict_types=1);
 namespace OCA\FullTextSearch_Elasticsearch\Platform;
 
 
-use Elastic\Elasticsearch\ClientBuilder;
 use Elastic\Elasticsearch\Client;
+use Elastic\Elasticsearch\ClientBuilder;
 use Exception;
 use InvalidArgumentException;
 use OCA\FullTextSearch_Elasticsearch\Exceptions\AccessIsEmptyException;
@@ -131,11 +131,7 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 	 * @throws Exception
 	 */
 	public function loadPlatform() {
-		try {
-			$this->connectToElastic($this->configService->getElasticHost());
-		} catch (ConfigurationException $e) {
-			throw $e;
-		}
+		$this->connectToElastic($this->configService->getElasticHost());
 	}
 
 
@@ -388,29 +384,30 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 	 *
 	 * @throws Exception
 	 */
-	private function connectToElastic(array $hosts) {
+	private function connectToElastic(array $hosts): void {
+		$hosts = array_map([$this, 'cleanHost'], $hosts);
+		$cb = ClientBuilder::create()
+			->setHosts($hosts)
+			->setRetries(3);
 
-		try {
-			$urlResult = $this->processHostUrls($hosts);
-			$hosts = $urlResult['hosts'];
-			$cb = ClientBuilder::create()
-							   ->setHosts($hosts)
-							   ->setRetries(3);
-			if ($urlResult['user'] && $urlResult['pass']) {
-				$cb->setBasicAuthentication($urlResult['user'], $urlResult['pass']);
+		$cb->setSSLVerification(!$this->configService->getAppValueBool(ConfigService::ALLOW_SELF_SIGNED_CERT));
+		$this->configureAuthentication($cb, $hosts);
+
+		$this->client = $cb->build();
+	}
+
+	/**
+	 * setBasicAuthentication() on ClientBuilder if available, using list of hosts
+	 */
+	private function configureAuthentication(ClientBuilder $cb, array $hosts): void {
+		foreach ($hosts as $host) {
+			$user = parse_url($host, PHP_URL_USER) ?? '';
+			$pass = parse_url($host, PHP_URL_PASS) ?? '';
+
+			if ($user !== '' || $pass !== '') {
+				$cb->setBasicAuthentication($user, $pass);
+				return;
 			}
-			$this->client = $cb->build();
-
-//		}
-//		catch (CouldNotConnectToHost $e) {
-//			$this 'CouldNotConnectToHost';
-//			$previous = $e->getPrevious();
-//			if ($previous instanceof MaxRetriesException) {
-//				echo "Max retries!";
-//			}
-		} catch (Exception $e) {
-			throw $e;
-//			echo ' ElasticSearchPlatform::load() Exception --- ' . $e->getMessage() . "\n";
 		}
 	}
 
