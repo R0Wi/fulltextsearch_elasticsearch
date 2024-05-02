@@ -167,23 +167,6 @@ class ConfigService {
 		return false;
 	}
 
-
-	public function getAppValueBool(string $key): bool {
-		$value = $this->config->getAppValue(Application::APP_NAME, $key, null) ?? self::$defaults[$key] ?? false;
-		if (is_bool($value)) {
-			return $value;
-		}
-
-		if ($value === 1 ||
-			$value === '1' ||
-			strtolower($value) === 'true' ||
-			strtolower($value) === 'yes') {
-			return true;
-		}
-
-		return false;
-	}
-
 	/**
 	 * Set a value by key
 	 *
