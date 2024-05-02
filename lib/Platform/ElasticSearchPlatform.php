@@ -33,6 +33,7 @@ namespace OCA\FullTextSearch_Elasticsearch\Platform;
 
 use Elastic\Elasticsearch\Client;
 use Elastic\Elasticsearch\ClientBuilder;
+use Elastic\Transport\Exception\NoNodeAvailableException;
 use Exception;
 use InvalidArgumentException;
 use OCA\FullTextSearch_Elasticsearch\Exceptions\AccessIsEmptyException;
@@ -48,7 +49,7 @@ use OCP\FullTextSearch\Model\IIndex;
 use OCP\FullTextSearch\Model\IIndexDocument;
 use OCP\FullTextSearch\Model\IRunner;
 use OCP\FullTextSearch\Model\ISearchResult;
-
+use Psr\Log\LoggerInterface;
 
 /**
  * Class ElasticSearchPlatform
@@ -67,6 +68,7 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 		private ConfigService $configService,
 		private IndexService $indexService,
 		private SearchService $searchService,
+		private LoggerInterface $logger,
 	) {
 	}
 
@@ -185,8 +187,6 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 	 */
 	public function indexDocument(IIndexDocument $document): IIndex {
 		$document->initHash();
-
-		$index = null;
 		try {
 			$result = $this->indexService->indexDocument($this->getClient(), $document);
 			$index = $this->indexService->parseIndexResult($document->getIndex(), $result);
@@ -197,6 +197,9 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 			);
 
 			return $index;
+		} catch (NoNodeAvailableException $e) {
+			// replace with \OCP\FullTextSearch\Exceptions\PlatformTemporaryException for version 28.
+			throw new \OCA\FullTextSearch\Exceptions\PlatformTemporaryException();
 		} catch (Exception $e) {
 			$this->manageIndexErrorException($document, $e);
 		}
@@ -389,6 +392,10 @@ class ElasticSearchPlatform implements IFullTextSearchPlatform {
 		$cb = ClientBuilder::create()
 			->setHosts($hosts)
 			->setRetries(3);
+
+		if ($this->configService->getAppValueBool(ConfigService::ELASTIC_LOGGER_ENABLED)) {
+			$cb->setLogger($this->logger);
+		}
 
 		$cb->setSSLVerification(!$this->configService->getAppValueBool(ConfigService::ALLOW_SELF_SIGNED_CERT));
 		$this->configureAuthentication($cb, $hosts);

@@ -3,6 +3,13 @@
 ### 27.0.2
 
 - fix authentication on password protected ES
+### 28.0.1
+
+- fix composer packages conflict
+
+### 28.0.0
+
+- update composer packages
 
 ### 27.0.1
 
@@ -15,6 +22,9 @@
 
 ### 26.0.0
 
+### 26.0.0
+
+- BREAKING CHANGE: drop support for es7
 - compat nc26
 - compat es8
 
